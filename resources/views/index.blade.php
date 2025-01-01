@@ -146,6 +146,7 @@
 
 
 <!-- testimonial slider -->
+<!-- testimonial slider -->
 <section class="testimonial-slider pt-100 pb-100">
     <div class="container">
         <div class="row">
@@ -157,37 +158,24 @@
             </div>
         </div>
         <div class="testimonial-carousel">
-            <div class="single-testimonial card">
-                <div class="testimonial-content">
-                    <p>"The embroidery tools I purchased are absolutely top-notch! Highly recommend Alma Embroidery Tools."</p>
+            @foreach($testimonials as $testimonial)
+                <div class="single-testimonial card">
+                    <div class="testimonial-content">
+                        <p>"{{ $testimonial->comment }}"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <h4>{{ $testimonial->user->name }}</h4>
+                        <span>Happy Customer</span>
+                    </div>
                 </div>
-                <div class="testimonial-author">
-                    <h4>SARA Doe</h4>
-                    <span>Happy Customer</span>
-                </div>
-            </div>
-            <div class="single-testimonial card">
-                <div class="testimonial-content">
-                    <p>"Great quality and customer support. Will definitely be back for more."</p>
-                </div>
-                <div class="testimonial-author">
-                    <h4>Jane Smith</h4>
-                    <span>Creative Designer</span>
-                </div>
-            </div>
-            <div class="single-testimonial card">
-                <div class="testimonial-content">
-                    <p>"Alma's products have made my embroidery projects easier and more beautiful!"</p>
-                </div>
-                <div class="testimonial-author">
-                    <h4>Mary Ann</h4>
-                    <span>Professional Embroiderer</span>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
 </section>
+
 <!-- end testimonial slider -->
+
+
 
 
 

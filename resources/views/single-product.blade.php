@@ -45,15 +45,10 @@
                         </form>
                     </div>
                     <!-- Show product reviews -->
-                    <div class="product-reviews">
-                        <h4>Reviews</h4>
-                        @foreach($product->reviews as $review)
-                            <div class="review-item">
-                                <strong>{{ $review->user->name }}</strong>
-                                <p>Rating: {{ $review->rating }}/5</p>
-                                <p>{{ $review->comment }}</p>
-                            </div>
-                        @endforeach
+                    <div class="product-rating">
+    <h4>Rating: {{ number_format($averageRating, 1) }}/5</h4>
+</div>
+
                     </div>
                 </div>
             </div>

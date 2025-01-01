@@ -91,74 +91,75 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 
 <script>
-    window.onload = function () {
-        // Orders Chart (Monthly)
-        const ordersCtx = document.getElementById('myAreaChart').getContext('2d');
-        const ordersData = @json($ordersData);
-        const ordersLabels = ordersData.map(item => `Month ${item.month}`);
-        const ordersValues = ordersData.map(item => item.count);
+   window.onload = function () {
+    // Orders Chart (Monthly)
+    const ordersCtx = document.getElementById('salesChart').getContext('2d');
+    const ordersData = @json($ordersData); // Dynamic data from controller
+    const ordersLabels = ordersData.map(item => `Month ${item.month}`);
+    const ordersValues = ordersData.map(item => item.count);
 
-        const ordersChart = new Chart(ordersCtx, {
-            type: 'line',
-            data: {
-                labels: ordersLabels,
-                datasets: [{
-                    label: 'Orders',
-                    data: ordersValues,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 2,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+    const ordersChart = new Chart(ordersCtx, {
+        type: 'line',
+        data: {
+            labels: ordersLabels,
+            datasets: [{
+                label: 'Orders',
+                data: ordersValues,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderWidth: 2,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
+        }
+    });
 
-        // Stock Chart (Product Stock)
-        const stockCtx = document.getElementById('myBarChart').getContext('2d');
-        const stockData = @json($stockData);
-        const stockLabels = stockData.map(item => item.name);
-        const stockValues = stockData.map(item => item.stock);
+    // Stock Chart (Product Stock)
+    const stockCtx = document.getElementById('ordersChart').getContext('2d');
+    const stockData = @json($stockData); // Dynamic data from controller
+    const stockLabels = stockData.map(item => item.name);
+    const stockValues = stockData.map(item => item.stock);
 
-        const stockChart = new Chart(stockCtx, {
-            type: 'bar',
-            data: {
-                labels: stockLabels,
-                datasets: [{
-                    label: 'Stock',
-                    data: stockValues,
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)',
-                        'rgba(54, 162, 235, 0.2)',
-                        'rgba(255, 206, 86, 0.2)',
-                        'rgba(75, 192, 192, 0.2)'
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)',
-                        'rgba(54, 162, 235, 1)',
-                        'rgba(255, 206, 86, 1)',
-                        'rgba(75, 192, 192, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
+    const stockChart = new Chart(stockCtx, {
+        type: 'bar',
+        data: {
+            labels: stockLabels,
+            datasets: [{
+                label: 'Stock',
+                data: stockValues,
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
                 }
             }
-        });
-    }
+        }
+    });
+};
+
 </script>
 
 @push('scripts')

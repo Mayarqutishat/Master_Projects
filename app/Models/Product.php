@@ -40,6 +40,11 @@ class Product extends Model
     {
         return $this->hasMany(CartItem::class);
     }
+// في موديول Product
+public function averageRating()
+{
+    return $this->reviews()->avg('rating');
+}
 
  
 }

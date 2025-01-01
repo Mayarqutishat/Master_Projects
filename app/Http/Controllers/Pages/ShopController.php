@@ -30,7 +30,8 @@ class ShopController extends Controller {
 
     public function viewProduct($id) {
         $product = Product::with('category', 'images', 'reviews')->findOrFail($id);
-        return view('single-product', compact('product'));
+        $averageRating = $product->averageRating(); // حساب المعدل
+        return view('single-product', compact('product', 'averageRating'));
     }
 
     public function search(Request $request)
@@ -44,4 +45,9 @@ class ShopController extends Controller {
 
     return view('shop.index', compact('products'));
 }
+
+
+
+
+
 }

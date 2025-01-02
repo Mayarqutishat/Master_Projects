@@ -15,21 +15,44 @@
                                 <th>ID</th>
                                 <th>Order ID</th>
                                 <th>Product ID</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="orderItemsTableBody">
                             @foreach($orderItems as $item)
-                                <tr id="order-item-row-{{ $item->id }}">
+                                <tr id="order-item-row-{{ $item->id }}" 
+                                    class="{{ $item->deleted_at ? 'text-muted' : '' }}">
                                     <td>{{ $item->id }}</td>
                                     <td>{{ $item->order_id }}</td>
                                     <td>{{ $item->product_id }}</td>
                                     <td>
-                                        <button class="btn btn-primary btn-sm view-details-btn" data-id="{{ $item->id }}" data-quantity="{{ $item->quantity }}" data-price="{{ $item->price }}" data-deleted-at="{{ $item->deleted_at ?? 'N/A' }}" data-created-at="{{ $item->created_at }}" data-updated-at="{{ $item->updated_at }}">View</button>
+                                        {{ $item->deleted_at ? 'Deleted' : 'Active' }}
+                                    </td>
+                                    <td>
+                                        <!-- عرض التفاصيل -->
+                                        <button class="btn btn-primary btn-sm view-details-btn" 
+                                            data-id="{{ $item->id }}" 
+                                            data-quantity="{{ $item->quantity }}" 
+                                            data-price="{{ $item->price }}" 
+                                            data-deleted-at="{{ $item->deleted_at ?? 'N/A' }}" 
+                                            data-created-at="{{ $item->created_at }}" 
+                                            data-updated-at="{{ $item->updated_at }}">
+                                            View
+                                        </button>
+
                                         @if($item->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
+                                            <!-- استعادة العنصر -->
+                                            <button class="btn btn-success btn-sm restore-btn" 
+                                                data-id="{{ $item->id }}">
+                                                Restore
+                                            </button>
                                         @else
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $item->id }}">Delete</button>
+                                            <!-- حذف ناعم -->
+                                            <button class="btn btn-danger btn-sm soft-delete-btn" 
+                                                data-id="{{ $item->id }}">
+                                                Delete
+                                            </button>
                                         @endif
                                     </td>
                                 </tr>
@@ -42,10 +65,7 @@
     </div>
 </div>
 
-
-
-
-<!-- Pagination Links -->
+<!-- روابط التصفح -->
 <div class="d-flex justify-content-center">
     {{ $orderItems->links('vendor.pagination.custom') }}
 </div>
@@ -55,7 +75,7 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Toggle view details for order items in a popup
+        // عرض تفاصيل العنصر
         document.querySelectorAll('.view-details-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const itemId = button.getAttribute('data-id');
@@ -65,7 +85,6 @@
                 const createdAt = button.getAttribute('data-created-at');
                 const updatedAt = button.getAttribute('data-updated-at');
 
-                // Show popup with order item details
                 Swal.fire({
                     title: 'Order Item Details',
                     html: `
@@ -82,55 +101,58 @@
                     `,
                     icon: 'info',
                     showCloseButton: true,
-                    focusConfirm: false,
                     confirmButtonText: 'Close'
                 });
             });
         });
 
-        // Handle soft delete for order items
+        // حذف ناعم
         document.querySelectorAll('.soft-delete-btn').forEach(button => {
             button.addEventListener('click', async () => {
-                const orderItemId = button.getAttribute('data-id');
+                const id = button.getAttribute('data-id');
 
                 Swal.fire({
                     title: 'Are you sure?',
                     text: 'This action will soft delete the order item!',
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!',
+                    confirmButtonText: 'Yes, delete it!',
                 }).then(async (result) => {
                     if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/admin/order_items/${orderItemId}/soft-delete`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
-                                }
-                            });
-
-                            if (response.ok) {
-                                const data = await response.json();
-                                if (data.success) {
-                                    Swal.fire('Deleted!', 'Order item has been soft deleted.', 'success');
-                                    const row = document.querySelector(`#order-item-row-${orderItemId}`);
-                                    row.classList.add('text-muted');
-                                    button.disabled = true;
-                                    button.innerText = 'Deleted';
-                                } else {
-                                    Swal.fire('Error', 'Failed to delete order item.', 'error');
-                                }
-                            } else {
-                                Swal.fire('Error', 'Failed to communicate with the server.', 'error');
-                            }
-                        } catch (error) {
-                            Swal.fire('Error', 'Network error. Failed to communicate with the server.', 'error');
-                        }
+                        await handleAction(`/customer/order_items/${id}/soft-delete`, 'POST', button, 'Soft deleted');
                     }
                 });
             });
         });
+
+        // استعادة العنصر
+        document.querySelectorAll('.restore-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                const id = button.getAttribute('data-id');
+                await handleAction(`/customer/order_items/${id}/restore`, 'POST', button, 'Restored');
+            });
+        });
+
+        // دالة مساعدة للتعامل مع الطلبات
+        async function handleAction(url, method, button, successMessage) {
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    },
+                });
+
+                if (response.ok) {
+                    Swal.fire('Success', successMessage, 'success');
+                    location.reload(); // تحديث الصفحة بعد الإجراء
+                } else {
+                    Swal.fire('Error', 'Failed to perform the action.', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Error', 'Network error. Please try again later.', 'error');
+            }
+        }
     });
 </script>
 @endpush

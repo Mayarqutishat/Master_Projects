@@ -422,7 +422,6 @@
                     <select id="user_role" name="user_role" class="form-input form-select" required>
                         <option value="">Select role</option>
                         <option value="customer" {{ old('user_role') == 'customer' ? 'selected' : '' }}>Customer</option>
-                        <option value="admin" {{ old('user_role') == 'admin' ? 'selected' : '' }}>Admin</option>
                     </select>
                     <x-input-error :messages="$errors->get('user_role')" class="error-message" />
                 </div>

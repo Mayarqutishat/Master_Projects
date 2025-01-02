@@ -74,14 +74,7 @@ class OrderController extends Controller
     /**
      * Soft delete the specified resource.
      */
-    public function softDelete($id)
-    {
-        // Find the order by ID and soft delete it
-        $order = Order::findOrFail($id);
-        $order->delete(); // Soft delete
-
-        return response()->json(['success' => true]);
-    }
+   
 
     /**
      * Display the specified resource.
@@ -96,11 +89,26 @@ class OrderController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function softDelete($id)
     {
-        // Permanently delete the order from storage
+        $order = Order::findOrFail($id);
+        $order->delete(); // Soft delete
+
+        return response()->json(['success' => true]);
+    }
+
+    public function restore($id)
+    {
         $order = Order::withTrashed()->findOrFail($id);
-        $order->forceDelete(); // This permanently deletes the order
+        $order->restore(); // Restore soft-deleted record
+
+        return response()->json(['success' => true]);
+    }
+
+    public function destroy($id)
+    {
+        $order = Order::withTrashed()->findOrFail($id);
+        $order->forceDelete(); // Permanently delete
 
         return response()->json(['success' => true]);
     }

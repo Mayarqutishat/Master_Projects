@@ -55,7 +55,7 @@ use App\Http\Controllers\Customer\{
 Route::get('/shop', [ShopController::class, 'newestProduct']);
 
 // تعديل الراوت ليتوجه إلى دالة newestProduct في HomeController
-Route::get('/', [HomeController::class, 'newestProduct']);
+Route::get('/', [HomeController::class, 'newestProduct'])->name('index');
 
 Route::get('/cart', [ CartController::class, 'newestProduct']);
 
@@ -184,7 +184,7 @@ Route::post('/user/update-profile', [UserController::class, 'updateProfile'])->n
 // Admin routes
     Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-
+ 
     Route::resource('users', AdminUserController::class);
     Route::post('users/{id}/soft-delete', [AdminUserController::class, 'softDelete'])->name('users.softDelete');
     Route::post('users/{id}/restore', [AdminUserController::class, 'restore'])->name('users.restore');

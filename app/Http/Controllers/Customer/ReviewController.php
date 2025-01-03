@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Review;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+
 class ReviewController extends Controller
 {
     public function __construct()
@@ -19,8 +20,7 @@ class ReviewController extends Controller
     public function index()
     {
         // Fetch reviews including soft deleted ones
-        $reviews= Review::withTrashed()->paginate(8);  
-    
+        $reviews = Review::withTrashed()->paginate(8);  
         return view('customer.reviews.index', compact('reviews'));
     }
 
@@ -45,7 +45,7 @@ class ReviewController extends Controller
         $review->save();
 
         // Redirect to the reviews list page
-        return redirect()->route('reviews.index')->with('success', 'Review created successfully');
+        return redirect()->route('customer.reviews.index')->with('success', 'Review created successfully');
     }
 
     public function edit(string $id)
@@ -59,7 +59,7 @@ class ReviewController extends Controller
         $products = Product::all();
         $users = User::all();
 
-        return view('admin.reviews.edit', compact('review', 'products', 'users'));
+        return view('customer.reviews.edit', compact('review', 'products', 'users'));
     }
 
     // Update method
@@ -83,7 +83,7 @@ class ReviewController extends Controller
         $review->comment = $request->input('comment');
         $review->save();
 
-        return redirect()->route('reviews.index')->with('success', 'Review updated successfully');
+        return redirect()->route('customer.reviews.index')->with('success', 'Review updated successfully');
     }
 
     // Soft delete a review
@@ -102,5 +102,16 @@ class ReviewController extends Controller
         } catch (\Exception $e) {
             return response()->json(['error' => 'Failed to delete review. ' . $e->getMessage()], 500);
         }
+    }
+
+    // Restore a review
+    public function restore($id)
+    {
+        $review = Review::withTrashed()->findOrFail($id);
+        if ($review->trashed()) {
+            $review->restore();
+            return response()->json(['success' => true, 'review' => $review]);
+        }
+        return response()->json(['success' => false]);
     }
 }

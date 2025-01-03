@@ -14,23 +14,25 @@
                             <tr>
                                 <th>ID</th>
                                 <th>User ID</th>
-                                <th>Updated At</th> <!-- Added Updated At column -->
+                                <th>Updated At</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="reviewsTableBody">
                             @foreach($reviews as $review)
-                                <tr id="review-row-{{ $review->id }}">
+                                <tr id="review-row-{{ $review->id }}" class="{{ $review->deleted_at ? 'text-muted' : '' }}">
                                     <td>{{ $review->id }}</td>
                                     <td>{{ $review->user_id }}</td>
-                                    <td>{{ $review->updated_at ? $review->updated_at->format('Y-m-d H:i:s') : 'N/A' }}</td> <!-- Display updated_at -->
+                                    <td>{{ $review->updated_at ? $review->updated_at->format('Y-m-d H:i:s') : 'N/A' }}</td>
                                     <td>
                                         <button class="btn btn-primary btn-sm view-details-btn" data-id="{{ $review->id }}" data-product-id="{{ $review->product_id }}" data-rating="{{ $review->rating }}" data-comment="{{ $review->comment }}" data-created-at="{{ $review->created_at }}" data-updated-at="{{ $review->updated_at }}" data-deleted-at="{{ $review->deleted_at }}">View</button>
-                                        @if($review->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
-                                        @else
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $review->id }}">Delete</button>
-                                        @endif
+                                        <button class="btn btn-danger btn-sm action-btn" data-id="{{ $review->id }}">
+                                            @if($review->deleted_at)
+                                                Restore
+                                            @else
+                                                Delete
+                                            @endif
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -60,7 +62,7 @@
                 const rating = button.getAttribute('data-rating');
                 const comment = button.getAttribute('data-comment');
                 const createdAt = button.getAttribute('data-created-at');
-                const updatedAt = button.getAttribute('data-updated-at') || 'N/A'; // Add updated_at
+                const updatedAt = button.getAttribute('data-updated-at') || 'N/A';
                 const deletedAt = button.getAttribute('data-deleted-at') || 'N/A';
 
                 Swal.fire({
@@ -71,7 +73,7 @@
                             <li><strong>Rating:</strong> ${rating}</li>
                             <li><strong>Comment:</strong> ${comment}</li>
                             <li><strong>Created At:</strong> ${createdAt}</li>
-                            <li><strong>Updated At:</strong> ${updatedAt}</li> <!-- Show updated_at -->
+                            <li><strong>Updated At:</strong> ${updatedAt}</li>
                             <li><strong>Deleted At:</strong> ${deletedAt}</li>
                         </ul>
                     `,
@@ -81,38 +83,59 @@
             });
         });
 
-        // Handle soft delete for reviews
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
+        // Handle soft delete and restore for reviews
+        document.querySelectorAll('.action-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const reviewId = button.getAttribute('data-id');
+                const action = button.innerText.toLowerCase(); // Delete or Restore
+
+                const confirmText = action === 'delete' 
+                    ? 'Are you sure you want to soft delete this review?'
+                    : 'Are you sure you want to restore this review?';
+                
+                const confirmButtonText = action === 'delete' 
+                    ? 'Yes, soft delete it!' 
+                    : 'Yes, restore it!';
 
                 Swal.fire({
                     title: 'Are you sure?',
-                    text: 'This action will soft delete the review!',
+                    text: confirmText,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!',
+                    confirmButtonText: confirmButtonText
                 }).then(async (result) => {
                     if (result.isConfirmed) {
+                        const url = action === 'delete' 
+                            ? `/customer/reviews/${reviewId}/soft-delete` 
+                            : `/customer/reviews/${reviewId}/restore`;
+
                         try {
-                            const response = await fetch(`/admin/reviews/${reviewId}/soft-delete`, {
+                            const response = await fetch(url, {
                                 method: 'POST',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
+                                    'Content-Type': 'application/json'
                                 }
                             });
 
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.success) {
-                                    Swal.fire('Deleted!', 'Review has been soft deleted.', 'success');
                                     const row = document.querySelector(`#review-row-${reviewId}`);
-                                    row.classList.add('text-muted');
-                                    button.disabled = true;
-                                    button.innerText = 'Deleted';
+                                    if (action === 'delete') {
+                                        row.classList.add('text-muted');
+                                        button.innerText = 'Restore';
+                                        button.classList.remove('btn-danger');
+                                        button.classList.add('btn-success');
+                                    } else {
+                                        row.classList.remove('text-muted');
+                                        button.innerText = 'Delete';
+                                        button.classList.remove('btn-success');
+                                        button.classList.add('btn-danger');
+                                    }
+                                    Swal.fire(action === 'delete' ? 'Deleted!' : 'Restored!', `Review has been ${action === 'delete' ? 'soft deleted' : 'restored'}.`, 'success');
                                 } else {
-                                    Swal.fire('Error', 'Failed to delete review.', 'error');
+                                    Swal.fire('Error', `Failed to ${action} the review.`, 'error');
                                 }
                             } else {
                                 Swal.fire('Error', 'Failed to communicate with the server.', 'error');

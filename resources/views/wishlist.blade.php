@@ -26,7 +26,7 @@ $wishlistProducts = \App\Models\Product::whereIn('id', $wishlist)->get();
     <div class="col-lg-4 col-md-6 text-center wishlist-item" data-product-id="{{ $product->id }}">
         <div class="single-product-item">
             <div class="product-image">
-                <a href="{{ url('/single-product') }}">
+            <a href="{{ url('/single-product/' . $product->id) }}">
                 @if($product->images->isNotEmpty())
                     <img src="{{ asset('storage/' . $product->images->first()->url) }}" alt="{{ $product->name }}">
                 @else

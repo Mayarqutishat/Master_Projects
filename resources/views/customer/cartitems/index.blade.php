@@ -16,24 +16,24 @@
                                 <th>Cart ID</th>
                                 <th>Product ID</th>
                                 <th>Quantity</th>
-                                <th>Deleted At</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="cartItemsTableBody">
                             @foreach($cartItems as $cartItem)
-                                <tr id="cart-item-row-{{ $cartItem->id }}">
+                                <tr id="cart-item-row-{{ $cartItem->id }}" class="{{ $cartItem->deleted_at ? 'text-muted' : '' }}">
                                     <td>{{ $cartItem->id }}</td>
                                     <td>{{ $cartItem->cart_id }}</td>
                                     <td>{{ $cartItem->product_id }}</td>
                                     <td>{{ $cartItem->quantity }}</td>
-                                    <td>{{ $cartItem->deleted_at }}</td>
                                     <td>
-                                        @if($cartItem->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
-                                        @else
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $cartItem->id }}">Delete</button>
-                                        @endif
+                                        <button class="btn {{ $cartItem->deleted_at ? 'btn-success' : 'btn-danger' }} btn-sm action-btn" data-id="{{ $cartItem->id }}">
+                                            @if($cartItem->deleted_at)
+                                                Restore
+                                            @else
+                                                Delete
+                                            @endif
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -45,50 +45,69 @@
     </div>
 </div>
 
-
 <!-- Pagination Links -->
 <div class="d-flex justify-content-center">
     {{ $cartItems->links('vendor.pagination.custom') }}
 </div>
-
 @endsection
 
 @push('scripts')
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Handle soft delete
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
+        // Handle delete and restore actions
+        document.querySelectorAll('.action-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const cartItemId = button.getAttribute('data-id');
+                const action = button.innerText.toLowerCase(); // Delete or Restore
+
+                const confirmText = action === 'delete' 
+                    ? 'Are you sure you want to soft delete this cart item?' 
+                    : 'Are you sure you want to restore this cart item?';
+                
+                const confirmButtonText = action === 'delete' 
+                    ? 'Yes, soft delete it!' 
+                    : 'Yes, restore it!';
 
                 Swal.fire({
                     title: 'Are you sure?',
-                    text: 'This action will soft delete the cart item!',
+                    text: confirmText,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!',
+                    confirmButtonText: confirmButtonText
                 }).then(async (result) => {
                     if (result.isConfirmed) {
+                        const url = action === 'delete' 
+                            ? `/customer/cart_items/${cartItemId}/soft-delete` 
+                            : `/customer/cart_items/${cartItemId}/restore`;
+
                         try {
-                            const response = await fetch(`/customer/cart_items/${cartItemId}/soft-delete`,{
+                            const response = await fetch(url, {
                                 method: 'POST',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
+                                    'Content-Type': 'application/json'
                                 }
                             });
 
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.success) {
-                                    Swal.fire('Deleted!', 'Cart item has been soft deleted.', 'success');
                                     const row = document.querySelector(`#cart-item-row-${cartItemId}`);
-                                    row.classList.add('text-muted');
-                                    button.disabled = true;
-                                    button.innerText = 'Deleted';
+                                    if (action === 'delete') {
+                                        row.classList.add('text-muted');
+                                        button.innerText = 'Restore';
+                                        button.classList.remove('btn-danger');
+                                        button.classList.add('btn-success');
+                                    } else {
+                                        row.classList.remove('text-muted');
+                                        button.innerText = 'Delete';
+                                        button.classList.remove('btn-success');
+                                        button.classList.add('btn-danger');
+                                    }
+                                    Swal.fire(action === 'delete' ? 'Deleted!' : 'Restored!', `Cart item has been ${action === 'delete' ? 'soft deleted' : 'restored'}.`, 'success');
                                 } else {
-                                    Swal.fire('Error', 'Failed to delete cart item.', 'error');
+                                    Swal.fire('Error', `Failed to ${action} the cart item.`, 'error');
                                 }
                             } else {
                                 Swal.fire('Error', 'Failed to communicate with the server.', 'error');

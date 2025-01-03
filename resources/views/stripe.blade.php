@@ -56,7 +56,7 @@
                             class="btn btn-success mt-3"
                             type="button"
                             style="margin-top: 20px; width: 100%; padding: 7px;"
-                            onclick="createToken()">PAY $10
+                            onclick="createToken()">PAY 
                         </button>
                     </form>
                 </div>

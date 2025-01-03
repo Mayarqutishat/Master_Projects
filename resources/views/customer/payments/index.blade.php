@@ -36,11 +36,7 @@
                                             data-updated-at="{{ $payment->updated_at }}">
                                             View
                                         </button>
-                                        @if($payment->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
-                                        @else
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $payment->id }}">Delete</button>
-                                        @endif
+                                     
                                     </td>
                                 </tr>
                             @endforeach
@@ -94,49 +90,7 @@
             });
         });
 
-        // Handle soft delete for payments
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
-            button.addEventListener('click', async () => {
-                const paymentId = button.getAttribute('data-id');
-
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This action will soft delete the payment record!',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!',
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/admin/payments/${paymentId}/soft-delete`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json',
-                                }
-                            });
-
-                            if (response.ok) {
-                                const data = await response.json();
-                                if (data.success) {
-                                    Swal.fire('Deleted!', 'Payment record has been soft deleted.', 'success');
-                                    const row = document.querySelector(`#payment-row-${paymentId}`);
-                                    row.classList.add('text-muted');
-                                    button.disabled = true;
-                                    button.innerText = 'Deleted';
-                                } else {
-                                    Swal.fire('Error', 'Failed to delete payment record.', 'error');
-                                }
-                            } else {
-                                Swal.fire('Error', 'Failed to communicate with the server.', 'error');
-                            }
-                        } catch (error) {
-                            Swal.fire('Error', 'Network error. Failed to communicate with the server.', 'error');
-                        }
-                    }
-                });
-            });
-        });
+       
     });
 </script>
 @endpush

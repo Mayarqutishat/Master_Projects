@@ -106,4 +106,5 @@ class PaymentController extends Controller
             return response()->json(['error' => 'Failed to delete payment. ' . $e->getMessage()], 500);
         }
     }
+    
 }

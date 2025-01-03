@@ -246,11 +246,10 @@ Route::post('/user/update-profile', [UserController::class, 'updateProfile'])->n
 Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer.')->group(function () {
     Route::get('/dashboard', [CustomerDashboardController::class, 'index'])->name('dashboard');
 
-    // Users Section
-    Route::resource('users', CustomerUserController::class);  
-    Route::post('users/{id}/soft-delete', [CustomerUserController::class, 'softDelete'])->name('users.softDelete');
-    Route::post('users/{id}/restore', [CustomerUserController::class, 'restore'])->name('users.restore');
-    
+    Route::resource('users', CustomerUserController::class)->names('customer.users');
+    Route::post('users/{id}/softDelete', [CustomerUserController::class, 'softDelete'])->name('customer.users.softDelete');
+    Route::post('users/{id}', [CustomerUserController::class, 'update'])->name('customer.users.update');
+    Route::get('users/{userId}/view-profile', [CustomerUserController::class, 'viewProfile']);
   
     
     // Orders Section
@@ -262,8 +261,9 @@ Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer
     Route::post('order_items/{id}/soft-delete', [CustomerOrderItemController::class, 'softDelete'])->name('order_items.softDelete');
     Route::post('order_items/{id}/restore', [CustomerOrderItemController::class, 'restore'])->name('order_items.restore');
     // Reviews Section
-    Route::resource('reviews', CustomerReviewController::class);
-    Route::post('reviews/{id}/soft-delete', [CustomerReviewController::class, 'softDelete'])->name('reviews.softDelete');
+ Route::resource('reviews', CustomerReviewController::class);
+Route::post('reviews/{id}/soft-delete', [CustomerReviewController::class, 'softDelete'])->name('reviews.softDelete');
+Route::post('reviews/{id}/restore', [CustomerReviewController::class, 'restore'])->name('reviews.restore');
 
     // Cart Section
     Route::resource('carts', CustomerCartController::class);
@@ -277,9 +277,6 @@ Route::middleware(['auth', 'role:customer'])->prefix('customer')->name('customer
 
     // Payments Section
     Route::resource('payments', CustomerPaymentController::class);
-    Route::post('payments/{id}/soft-delete', [CustomerPaymentController::class, 'softDelete'])->name('payments.softDelete');
-    Route::post('payments/{id}/restore', [CustomerPaymentController::class, 'restore'])->name('payments.restore');
-
 });
 
 

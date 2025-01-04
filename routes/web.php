@@ -156,9 +156,7 @@ Route::get('/single-product/{product}', function (Product $product) {
 
 
 
-Route::get('/confirmation', function () {
-    return view('confirmation');
-});
+
 
 Route::get('/wishlist', function () {
     return view('wishlist');
@@ -202,7 +200,7 @@ Route::post('/user/update-profile', [UserController::class, 'updateProfile'])->n
     Route::post('products/{id}/soft-delete', [AdminProductController::class, 'softDelete'])->name('products.softDelete');
     Route::post('products/{id}/restore', [AdminProductController::class, 'restore'])->name('products.restore');
     Route::post('products/{id}', [AdminProductController::class, 'update'])->name('admin.products.update');
-
+    
     Route::resource('orders', AdminOrderController::class);
     Route::post('orders/{id}/soft-delete', [AdminOrderController::class, 'softDelete'])->name('orders.softDelete');
     Route::post('orders/{id}/restore', [AdminOrderController::class, 'restore'])->name('orders.restore');
@@ -215,11 +213,9 @@ Route::post('/user/update-profile', [UserController::class, 'updateProfile'])->n
     Route::post('reviews/{id}/soft-delete', [AdminReviewController::class, 'softDelete'])->name('reviews.softDelete');
     Route::post('reviews/{id}/restore', [AdminReviewController::class, 'restore'])->name('reviews.restore');
 
-    Route::resource('images', AdminImageController::class);
-    Route::post('images/{id}/soft-delete', [AdminImageController::class, 'softDelete'])->name('images.softDelete');
-    Route::post('images/{id}/restore', [AdminImageController::class, 'restore'])->name('images.restore');
-    Route::put('images/{id}', [AdminImageController::class, 'update'])->name('images.update');
-    Route::post('/admin/images', [AdminImageController::class, 'store'])->name('images.store');
+  Route::resource('images', AdminImageController::class);
+Route::post('images/{id}/soft-delete', [AdminImageController::class, 'softDelete'])->name('images.softDelete');
+Route::post('images/{id}/restore', [AdminImageController::class, 'restore'])->name('images.restore');
 
     Route::resource('carts', AdminCartController::class);
     Route::post('carts/{id}/soft-delete', [AdminCartController::class, 'softDelete'])->name('carts.softDelete');

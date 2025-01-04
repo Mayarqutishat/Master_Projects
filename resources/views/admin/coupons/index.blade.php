@@ -8,7 +8,7 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title">Coupons List</h4>
-                <button class="btn btn-success  mb-3" id="addCouponBtn">Add Coupon</button> <!-- Add Button -->
+                <button class="btn btn-success mb-3" id="addCouponBtn">Add Coupon</button>
 
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -31,11 +31,12 @@
                                     <td>{{ $coupon->expiry_date }}</td>
                                     <td>{{ $coupon->deleted_at }}</td>
                                     <td>
-                                        @if($coupon->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
-                                        @else
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $coupon->id }}">Delete</button>
-                                        @endif
+
+
+                                        <!-- Toggle Delete/Restore Button -->
+                                        <button class="btn {{ $coupon->deleted_at ? 'btn-warning' : 'btn-danger' }} btn-sm toggle-delete-btn" data-id="{{ $coupon->id }}">
+                                            {{ $coupon->deleted_at ? 'Restore' : 'Delete' }}
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -58,7 +59,6 @@
             <div class="modal-body">
                 <form id="couponForm">
                     <input type="hidden" id="couponId" name="id">
-
                     <div class="mb-3">
                         <label for="code" class="form-label">Code</label>
                         <input type="text" class="form-control" id="code" name="code" required>
@@ -80,6 +80,7 @@
         </div>
     </div>
 </div>
+
 <!-- Pagination Links -->
 <div class="d-flex justify-content-center">
     {{ $coupons->links('vendor.pagination.custom') }}
@@ -90,21 +91,23 @@
 <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // Handle soft delete
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
+        // Handle Toggle Delete/Restore
+        document.querySelectorAll('.toggle-delete-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const couponId = button.getAttribute('data-id');
+                const isDeleted = button.innerText.trim() === 'Delete';
 
                 Swal.fire({
                     title: 'Are you sure?',
-                    text: 'This action will soft delete the coupon!',
+                    text: `This action will ${isDeleted ? 'soft delete' : 'restore'} the coupon!`,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!',
+                    confirmButtonText: `Yes, ${isDeleted ? 'soft delete' : 'restore'} it!`,
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         try {
-                            const response = await fetch(`/admin/coupons/${couponId}/soft-delete`, {
+                            const url = isDeleted ? `/admin/coupons/${couponId}/soft-delete` : `/admin/coupons/${couponId}/restore`;
+                            const response = await fetch(url, {
                                 method: 'POST',
                                 headers: {
                                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
@@ -115,13 +118,12 @@
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.success) {
-                                    Swal.fire('Deleted!', 'Coupon has been soft deleted.', 'success');
-                                    const row = document.querySelector(`#coupon-row-${couponId}`);
-                                    row.classList.add('text-muted');
-                                    button.disabled = true;
-                                    button.innerText = 'Deleted';
+                                    Swal.fire('Success!', `Coupon has been ${isDeleted ? 'soft deleted' : 'restored'}.`, 'success');
+                                    button.innerText = isDeleted ? 'Restore' : 'Delete';
+                                    button.classList.toggle('btn-warning');
+                                    button.classList.toggle('btn-danger');
                                 } else {
-                                    Swal.fire('Error', 'Failed to delete coupon.', 'error');
+                                    Swal.fire('Error', 'Failed to perform the action.', 'error');
                                 }
                             } else {
                                 Swal.fire('Error', 'Failed to communicate with the server.', 'error');
@@ -134,21 +136,43 @@
             });
         });
 
-        // Handle Add button click
-        document.getElementById('addCouponBtn').addEventListener('click', () => {
-            document.getElementById('couponForm').reset();
-            document.getElementById('couponId').value = ''; // Clear hidden ID field
-            document.getElementById('couponModalLabel').innerText = 'Add Coupon';
-            $('#couponModal').modal('show');
+        // Handle Edit Button
+        document.querySelectorAll('.edit-coupon-btn').forEach(button => {
+            button.addEventListener('click', async () => {
+                const couponId = button.getAttribute('data-id');
+
+                try {
+                    const response = await fetch(`/admin/coupons/${couponId}/edit`, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById('couponId').value = data.id;
+                        document.getElementById('code').value = data.code;
+                        document.getElementById('discount').value = data.discount;
+                        document.getElementById('expiry_date').value = data.expiry_date;
+                        document.getElementById('couponModalLabel').innerText = 'Edit Coupon';
+                        $('#couponModal').modal('show');
+                    } else {
+                        Swal.fire('Error', 'Failed to fetch coupon details.', 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Network error. Failed to fetch coupon details.', 'error');
+                }
+            });
         });
 
-        // Handle Save button click
+        // Handle Save Button
         document.getElementById('saveCouponBtn').addEventListener('click', async () => {
             const formData = new FormData(document.getElementById('couponForm'));
             const couponId = formData.get('id');
-            const method = couponId ? 'PUT' : 'POST'; // Determine method (PUT for edit, POST for add)
-
-            const url = couponId ? `/admin/coupons/${couponId}` : '/admin/coupons'; // URL for add/edit
+            const method = couponId ? 'PUT' : 'POST';
+            const url = couponId ? `/admin/coupons/${couponId}` : '/admin/coupons';
 
             try {
                 const response = await fetch(url, {
@@ -163,7 +187,7 @@
                 if (data.success) {
                     Swal.fire('Success', 'Coupon has been saved.', 'success');
                     $('#couponModal').modal('hide');
-                    location.reload(); // Refresh the page to see the updated data
+                    location.reload();
                 } else {
                     Swal.fire('Error', 'Failed to save coupon.', 'error');
                 }
@@ -171,8 +195,14 @@
                 Swal.fire('Error', 'Network error. Failed to save coupon.', 'error');
             }
         });
+
+        // Handle Add Button
+        document.getElementById('addCouponBtn').addEventListener('click', () => {
+            document.getElementById('couponForm').reset();
+            document.getElementById('couponId').value = '';
+            document.getElementById('couponModalLabel').innerText = 'Add Coupon';
+            $('#couponModal').modal('show');
+        });
     });
 </script>
-
-
 @endpush

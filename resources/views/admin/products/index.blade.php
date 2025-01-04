@@ -28,11 +28,11 @@
                                         <td>
                                             <button class="btn btn-primary btn-sm view-details-btn" data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-description="{{ $product->description }}" data-price="{{ $product->price }}" data-stock="{{ $product->stock }}" data-category="{{ $product->category_id }}" data-created="{{ $product->created_at }}" data-updated="{{ $product->updated_at }}">View</button>
                                             <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $product->id }}" data-name="{{ $product->name }}" data-description="{{ $product->description }}" data-price="{{ $product->price }}" data-stock="{{ $product->stock }}" data-category="{{ $product->category_id }}">Edit</button>
-                                            @if($product->deleted_at)
-                                                <button class="btn btn-success btn-sm action-btn" data-id="{{ $product->id }}">Restore</button>
-                                            @else
-                                                <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $product->id }}">Delete</button>
-                                            @endif
+                                            <button class="btn {{ $product->deleted_at ? 'btn-success' : 'btn-danger' }} btn-sm action-btn" 
+                                                    data-id="{{ $product->id }}" 
+                                                    data-action="{{ $product->deleted_at ? 'restore' : 'delete' }}">
+                                                {{ $product->deleted_at ? 'Restore' : 'Delete' }}
+                                            </button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -72,8 +72,12 @@
                             <input type="number" class="form-control" id="addProductStock" name="stock" required>
                         </div>
                         <div class="mb-3">
-                            <label for="addProductCategory" class="form-label">Category ID</label>
-                            <input type="number" class="form-control" id="addProductCategory" name="category_id" required>
+                            <label for="addProductCategory" class="form-label">Category</label>
+                            <select class="form-control" id="addProductCategory" name="category_id" required>
+                                @foreach($categories as $category)
+                                    <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="productImage" class="form-label">Product Image</label>
@@ -123,6 +127,10 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="mb-3">
+                            <label for="editProductImage" class="form-label">Product Image</label>
+                            <input type="file" class="form-control" id="editProductImage" name="image">
+                        </div>
                         <button type="submit" class="btn btn-warning">Update Product</button>
                     </form>
                 </div>
@@ -130,15 +138,10 @@
         </div>
     </div>
 
-
-<!-- Pagination Links -->
-<div class="d-flex justify-content-center">
-    {{ $products->links('vendor.pagination.custom') }}
-</div>
-
-
-
-    
+    <!-- Pagination Links -->
+    <div class="d-flex justify-content-center">
+        {{ $products->links('vendor.pagination.custom') }}
+    </div>
 @endsection
 
 @push('scripts')
@@ -183,19 +186,17 @@
         document.querySelectorAll('.edit-btn').forEach(button => {
             button.addEventListener('click', () => {
                 const productId = button.getAttribute('data-id');
-                const productName = button.getAttribute('data-name');
-                const productDescription = button.getAttribute('data-description');
-                const productPrice = button.getAttribute('data-price');
-                const productStock = button.getAttribute('data-stock');
-                const productCategoryId = button.getAttribute('data-category');
+                const productRow = document.querySelector(`#product-row-${productId}`);
 
+                // تحديث النموذج بالبيانات الحالية من الجدول
                 document.getElementById('editProductId').value = productId;
-                document.getElementById('editProductName').value = productName;
-                document.getElementById('editProductDescription').value = productDescription;
-                document.getElementById('editProductPrice').value = productPrice;
-                document.getElementById('editProductStock').value = productStock;
-                document.getElementById('editProductCategory').value = productCategoryId;
+                document.getElementById('editProductName').value = productRow.querySelector('.product-name').textContent;
+                document.getElementById('editProductDescription').value = productRow.querySelector('.product-description').textContent;
+                document.getElementById('editProductPrice').value = button.getAttribute('data-price');
+                document.getElementById('editProductStock').value = button.getAttribute('data-stock');
+                document.getElementById('editProductCategory').value = button.getAttribute('data-category');
 
+                // فتح النافذة المنبثقة
                 new bootstrap.Modal(document.getElementById('editProductModal')).show();
             });
         });
@@ -232,7 +233,7 @@
 
             try {
                 const response = await fetch(`/admin/products/${productId}`, {
-                    method: 'PUT',
+                    method: 'POST', // Use POST for form submission with file upload
                     body: form,
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -241,8 +242,18 @@
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
+                        // تحديث الصف في الجدول
+                        const productRow = document.querySelector(`#product-row-${productId}`);
+                        if (productRow) {
+                            productRow.querySelector('.product-name').textContent = data.product.name;
+                            productRow.querySelector('.product-description').textContent = data.product.description;
+                        }
+
+                        // عرض رسالة نجاح
                         Swal.fire('Success', 'Product updated successfully.', 'success');
-                        location.reload();
+
+                        // إغلاق النافذة المنبثقة
+                        bootstrap.Modal.getInstance(document.getElementById('editProductModal')).hide();
                     }
                 }
             } catch (error) {
@@ -250,49 +261,11 @@
             }
         });
 
-        // Soft delete product
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
-            button.addEventListener('click', async () => {
-                const productId = button.getAttribute('data-id');
-                Swal.fire({
-                    title: 'Are you sure?',
-                    text: 'This action will soft delete the product!',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Yes, soft delete it!'
-                }).then(async (result) => {
-                    if (result.isConfirmed) {
-                        try {
-                            const response = await fetch(`/admin/products/${productId}/soft-delete`, {
-                                method: 'POST',
-                                headers: {
-                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                            if (response.ok) {
-                                const data = await response.json();
-                                if (data.success) {
-                                    Swal.fire('Deleted!', 'Product has been soft deleted.', 'success');
-                                    const row = document.querySelector(`#product-row-${productId}`);
-                                    row.classList.add('text-muted');
-                                    row.querySelector('.soft-delete-btn').setAttribute('disabled', 'true');
-                                    row.querySelector('.soft-delete-btn').innerText = 'Deleted';
-                                }
-                            }
-                        } catch (error) {
-                            Swal.fire('Error', 'An error occurred while deleting the product.', 'error');
-                        }
-                    }
-                });
-            });
-        });
-
-        // Restore product
+        // Toggle between Delete and Restore
         document.querySelectorAll('.action-btn').forEach(button => {
             button.addEventListener('click', async () => {
                 const productId = button.getAttribute('data-id');
-                const action = button.innerText.toLowerCase(); // Restore or Delete
+                const action = button.getAttribute('data-action'); // 'delete' or 'restore'
 
                 const confirmText = action === 'delete' 
                     ? 'Are you sure you want to soft delete this product?' 
@@ -326,18 +299,27 @@
                             if (response.ok) {
                                 const data = await response.json();
                                 if (data.success) {
-                                    const row = document.querySelector(`#product-row-${productId}`);
+                                    // Update the button text and style
                                     if (action === 'delete') {
-                                        row.classList.add('text-muted');
+                                        button.setAttribute('data-action', 'restore');
                                         button.innerText = 'Restore';
                                         button.classList.remove('btn-danger');
                                         button.classList.add('btn-success');
                                     } else {
-                                        row.classList.remove('text-muted');
+                                        button.setAttribute('data-action', 'delete');
                                         button.innerText = 'Delete';
                                         button.classList.remove('btn-success');
                                         button.classList.add('btn-danger');
                                     }
+
+                                    // Update the row styling
+                                    const row = document.querySelector(`#product-row-${productId}`);
+                                    if (action === 'delete') {
+                                        row.classList.add('text-muted');
+                                    } else {
+                                        row.classList.remove('text-muted');
+                                    }
+
                                     Swal.fire(action === 'delete' ? 'Deleted!' : 'Restored!', `Product has been ${action === 'delete' ? 'soft deleted' : 'restored'}.`, 'success');
                                 }
                             } else {

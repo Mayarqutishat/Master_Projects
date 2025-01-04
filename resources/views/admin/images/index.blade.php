@@ -8,7 +8,6 @@
         <div class="card">
             <div class="card-body">
                 <h4 class="card-title">Images List</h4>
-                <button class="btn btn-success mb-3" id="addImageBtn">Add Image</button> <!-- Add Button -->
 
                 <div class="table-responsive">
                     <table class="table table-striped">
@@ -22,24 +21,24 @@
                         </thead>
                         <tbody id="imagesTableBody">
                             @foreach($images as $image)
-                                <tr id="image-row-{{ $image->id }}">
+                                <tr id="image-row-{{ $image->id }}" class="{{ $image->deleted_at ? 'text-muted' : '' }}">
                                     <td>{{ $image->id }}</td>
                                     <td>{{ $image->product_id }}</td>
                                     <td>{{ $image->url }}</td>
                                     <td>
-                                        @if($image->deleted_at)
-                                            <button class="btn btn-danger btn-sm" disabled>Deleted</button>
-                                        @else
-                                            <button class="btn btn-primary btn-sm view-btn" 
-                                                    data-id="{{ $image->id }}" 
-                                                    data-url="{{ $image->url }}" 
-                                                    data-product_id="{{ $image->product_id }}" 
-                                                    data-alt_text="{{ $image->alt_text }} "
-                                                    data-created_at="{{ $image->created_at }}"
-                                                    data-updated_at="{{ $image->updated_at }}">View</button>
-                                            <button class="btn btn-warning btn-sm edit-btn" data-id="{{ $image->id }}" data-url="{{ $image->url }}" data-product_id="{{ $image->product_id }}">Edit</button>
-                                            <button class="btn btn-danger btn-sm soft-delete-btn" data-id="{{ $image->id }}">Delete</button>
-                                        @endif
+                                        <button class="btn btn-primary btn-sm view-btn" 
+                                                data-id="{{ $image->id }}" 
+                                                data-url="{{ $image->url }}" 
+                                                data-product_id="{{ $image->product_id }}" 
+                                                data-alt_text="{{ $image->alt_text }}"
+                                                data-created_at="{{ $image->created_at }}"
+                                                data-updated_at="{{ $image->updated_at }}">View</button>
+                                        
+                                        <button class="btn {{ $image->deleted_at ? 'btn-success' : 'btn-danger' }} btn-sm toggle-delete-btn" 
+                                                data-id="{{ $image->id }}" 
+                                                data-action="{{ $image->deleted_at ? 'restore' : 'delete' }}">
+                                            {{ $image->deleted_at ? 'Restore' : 'Delete' }}
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach
@@ -51,47 +50,10 @@
     </div>
 </div>
 
-<!-- Modal for Adding/Editing Image -->
-<div class="modal fade" id="imageModal" tabindex="-1" role="dialog" aria-labelledby="imageModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageModalLabel">Add Image</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="imageForm" method="POST">
-                    @csrf
-                    <input type="hidden" id="imageId" name="imageId">
-                    <div class="form-group">
-                        <label for="product_id">Product ID</label>
-                        <input type="text" class="form-control" id="product_id" name="product_id" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="url">URL</label>
-                        <input type="text" class="form-control" id="url" name="url" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="alt_text">Alt Text</label>
-                        <input type="text" class="form-control" id="alt_text" name="alt_text">
-                    </div>
-                    <button type="submit" class="btn btn-primary" id="saveImageBtn">Save Image</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
 <!-- Pagination Links -->
 <div class="d-flex justify-content-center">
     {{ $images->links('vendor.pagination.custom') }}
 </div>
-
-
 
 @endsection
 
@@ -124,86 +86,68 @@
             });
         });
 
-        // Handle Edit Image Button Click
-        document.querySelectorAll('.edit-btn').forEach(button => {
-            button.addEventListener('click', () => {
+        // Handle Toggle Delete/Restore
+        document.querySelectorAll('.toggle-delete-btn').forEach(button => {
+            button.addEventListener('click', async () => {
                 const imageId = button.getAttribute('data-id');
-                const productId = button.getAttribute('data-product_id');
-                const url = button.getAttribute('data-url');
+                const action = button.getAttribute('data-action');
+
+                const confirmText = action === 'delete' 
+                    ? 'Are you sure you want to soft delete this image?' 
+                    : 'Are you sure you want to restore this image?';
                 
-                document.getElementById('imageModalLabel').innerText = "Edit Image";
-                document.getElementById('imageId').value = imageId;
-                document.getElementById('product_id').value = productId;
-                document.getElementById('url').value = url;
-                $('#imageModal').modal('show');
-            });
-        });
+                const confirmButtonText = action === 'delete' 
+                    ? 'Yes, soft delete it!' 
+                    : 'Yes, restore it!';
 
-        // Handle Add New Image Button Click
-        document.getElementById('addImageBtn').addEventListener('click', () => {
-            document.getElementById('imageModalLabel').innerText = "Add Image";
-            document.getElementById('imageForm').reset();
-            $('#imageModal').modal('show');
-        });
-
-        // Handle Save Image Form Submit
-        document.getElementById('imageForm').addEventListener('submit', function(event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);
-            const imageId = document.getElementById('imageId').value;
-            const method = imageId ? 'PUT' : 'POST'; // Choose method based on whether we're editing or adding
-
-            fetch(imageId ? `/images/${imageId}` : '/images', {
-                method: method,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    $('#imageModal').modal('hide');
-                    location.reload();
-                } else {
-                    Swal.fire('Error', 'Something went wrong!', 'error');
-                }
-            })
-            .catch(error => {
-                console.error(error);
-                Swal.fire('Error', 'Something went wrong!', 'error');
-            });
-        });
-
-        // Handle Soft Delete
-        document.querySelectorAll('.soft-delete-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const imageId = button.getAttribute('data-id');
                 Swal.fire({
                     title: 'Are you sure?',
-                    text: 'This action will soft delete the image.',
+                    text: confirmText,
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonText: 'Yes, delete it!',
-                    cancelButtonText: 'No, cancel!'
-                }).then((result) => {
+                    confirmButtonText: confirmButtonText
+                }).then(async (result) => {
                     if (result.isConfirmed) {
-                        fetch(`/images/${imageId}/delete`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                document.getElementById(`image-row-${imageId}`).remove();
-                                Swal.fire('Deleted!', 'Your image has been deleted.', 'success');
+                        const url = action === 'delete' 
+                            ? `/admin/images/${imageId}/soft-delete` 
+                            : `/admin/images/${imageId}/restore`;
+
+                        try {
+                            const response = await fetch(url, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                if (data.success) {
+                                    const row = document.querySelector(`#image-row-${imageId}`);
+                                    if (action === 'delete') {
+                                        row.classList.add('text-muted');
+                                        button.innerText = 'Restore';
+                                        button.classList.remove('btn-danger');
+                                        button.classList.add('btn-success');
+                                        button.setAttribute('data-action', 'restore');
+                                    } else {
+                                        row.classList.remove('text-muted');
+                                        button.innerText = 'Delete';
+                                        button.classList.remove('btn-success');
+                                        button.classList.add('btn-danger');
+                                        button.setAttribute('data-action', 'delete');
+                                    }
+                                    Swal.fire(action === 'delete' ? 'Deleted!' : 'Restored!', `Image has been ${action === 'delete' ? 'soft deleted' : 'restored'}.`, 'success');
+                                } else {
+                                    Swal.fire('Error', `Failed to ${action} the image.`, 'error');
+                                }
                             } else {
-                                Swal.fire('Failed!', 'Failed to delete image.', 'error');
+                                Swal.fire('Error', 'Failed to communicate with the server.', 'error');
                             }
-                        });
+                        } catch (error) {
+                            Swal.fire('Error', 'Network error. Failed to communicate with the server.', 'error');
+                        }
                     }
                 });
             });

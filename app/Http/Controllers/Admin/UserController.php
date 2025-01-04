@@ -19,7 +19,7 @@ class UserController extends Controller
     public function index()
     {
         // Fetch users including soft deleted ones
-        $users = User::withTrashed()->get();
+        $users = User::withTrashed()->paginate(10);
         return view('admin.users.index', compact('users'));
     }
 
@@ -129,4 +129,21 @@ class UserController extends Controller
             return response()->json(['error' => 'Failed to delete user. ' . $e->getMessage()], 500);
         }
     }
+     // Restore a soft deleted user
+     public function restore($id)
+     {
+         try {
+             $user = User::withTrashed()->findOrFail($id); // Find the user even if soft deleted
+ 
+             if (!$user->deleted_at) {
+                 return response()->json(['error' => 'User is not deleted.'], 400);
+             }
+ 
+             $user->restore(); // Restore the user
+ 
+             return response()->json(['success' => true]);
+         } catch (\Exception $e) {
+             return response()->json(['error' => 'Failed to restore user. ' . $e->getMessage()], 500);
+         }
+     }
 }

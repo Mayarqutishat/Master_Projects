@@ -25,7 +25,7 @@
                 <div class="product-filters">
                     <ul>
                         <li class="{{ request('filter') === '*' ? 'active' : '' }}" data-filter="*"><a href="{{ route('shop') }}">All</a></li>
-                        <li class="{{ request('filter') === 'Bags' ? 'active' : '' }}" data-filter=".bag"><a href="{{ route('shop', ['filter' => 'Bags']) }}">Bags</a></li>
+                        <li class="{{ request('filter') === 'Bags' ? 'active' : '' }}" data-filter=".bag"><a href="{{ route('shop', ['filter' => 'Bag']) }}">Bags</a></li>
                         <li class="{{ request('filter') === 'Frame' ? 'active' : '' }}" data-filter=".Frame"><a href="{{ route('shop', ['filter' => 'Frame']) }}">Frame</a></li>
                         <li class="{{ request('filter') === 'Needles' ? 'active' : '' }}" data-filter=".Needles"><a href="{{ route('shop', ['filter' => 'Needles']) }}">Needles</a></li>
                         <li class="{{ request('filter') === 'Yarns' ? 'active' : '' }}" data-filter=".Yarns"><a href="{{ route('shop', ['filter' => 'Yarns']) }}">Yarns</a></li>

@@ -14,11 +14,12 @@ class CategoryController extends Controller
         $this->middleware('auth');
         $this->middleware('role:admin');
     }
+
     public function index()
     {
         // جلب كل التصنيفات بما في ذلك المحذوفة (Soft Deleted)
-        $categories = Category::withTrashed()->paginate(8);  
-    
+        $categories = Category::withTrashed()->paginate(8);
+
         return view('admin.categories.index', compact('categories'));
     }
 
@@ -93,7 +94,7 @@ class CategoryController extends Controller
     public function softDelete($id)
     {
         try {
-            // العثور على التصنيف وحذفه حذفا سلسًا
+            // العثور على التصنيف وحذفه حذفًا سلسًا
             $category = Category::findOrFail($id);
             $category->delete();
 

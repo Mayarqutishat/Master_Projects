@@ -112,9 +112,6 @@
     {{ $categories->links('vendor.pagination.custom') }}
 </div>
 
-
-
-
 @endsection
 
 @push('scripts')
@@ -171,7 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-HTTP-Method-Override': 'PUT'
                 }
             });
 
@@ -180,9 +178,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 editModal.hide();
                 const row = document.getElementById(`category-row-${categoryId}`);
                 row.querySelector('.category-name').textContent = data.category.name;
+                
+                // تحديث الصورة مباشرة في الجدول
                 if (data.category.image) {
-                    row.querySelector('.category-image img').src = `/storage/${data.category.image}`;
+                    row.querySelector('.category-image img').src = data.category.image;
                 }
+
                 Swal.fire({
                     title: 'Updated Successfully',
                     icon: 'success',

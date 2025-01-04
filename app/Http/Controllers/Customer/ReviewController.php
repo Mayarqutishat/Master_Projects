@@ -20,7 +20,7 @@ class ReviewController extends Controller
     public function index()
     {
         // Fetch reviews including soft deleted ones
-        $reviews = Review::withTrashed()->paginate(8);  
+        $reviews = Review::withTrashed()->paginate(2);  
         return view('customer.reviews.index', compact('reviews'));
     }
 

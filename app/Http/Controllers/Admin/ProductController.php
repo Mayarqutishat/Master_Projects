@@ -71,21 +71,21 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
         ]);
-
+    
         try {
             // Find the product by ID
             $product = Product::findOrFail($id);
-
+    
             // Update the product's details
             $product->name = $request->input('name');
             $product->description = $request->input('description');
             $product->price = $request->input('price');
             $product->stock = $request->input('stock');
             $product->category_id = $request->input('category_id');
-
+    
             // Save the changes
             $product->save();
-
+    
             return response()->json([
                 'success' => true,
                 'product' => [
@@ -95,10 +95,8 @@ class ProductController extends Controller
                     'price' => $product->price,
                     'stock' => $product->stock,
                     'category_id' => $product->category_id,
-                   
                 ]
             ]);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
